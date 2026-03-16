@@ -1,0 +1,3 @@
+title,category,lesson_text,example_prompt,level,estimated_minutes
+Use Constraints for Better Outputs,prompting,"Always tell the model the format, length, tone, audience, and success criteria. Constraints reduce fluff and improve consistency.","Write a 150-word LinkedIn post for financial advisors. Tone: sharp, practical, data-driven. End with one CTA.",beginner,3
+Give the Model a Job,prompting,"Assign a role before the task. Good roles narrow the style and decision framework.","Act as a B2B SaaS growth strategist. Diagnose why this landing page is underperforming: [paste copy].",beginner,3
