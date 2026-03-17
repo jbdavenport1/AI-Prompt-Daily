@@ -6,21 +6,78 @@ from app.skills import get_skill_slice
 from app.render import render_issue_html
 
 
+def clean_headline(text):
+    text = text.strip()
+
+    if " - " in text:
+        text = text.split(" - ")[0].strip()
+
+    replacements = [
+        ("Artificial Intelligence", "AI"),
+        ("artificial intelligence", "AI"),
+    ]
+
+    for old, new in replacements:
+        text = text.replace(old, new)
+
+    return text
+
+
+def shorten_text(text, max_length):
+    text = text.strip()
+
+    if len(text) <= max_length:
+        return text
+
+    shortened = text[:max_length].rstrip()
+
+    if " " in shortened:
+        shortened = shortened.rsplit(" ", 1)[0]
+
+    return shortened + "..."
+
+
 def build_subject(headlines):
     if headlines:
-        return f"The Daily Prompt: {headlines[0].get('title', 'Top AI News')}"
-    return "The Daily Prompt: Your Daily AI Briefing"
+        top_title = headlines[0].get("title", "").strip()
+        if top_title:
+            cleaned = clean_headline(top_title)
+            cleaned = shorten_text(cleaned, 90)
+            return f"The Daily Prompt: {cleaned}"
+
+    return "The Daily Prompt: AI news, prompts, and skills"
 
 
 def build_preview(headlines, prompts):
-    headline = headlines[0].get("title", "Top AI News") if headlines else "Top AI News"
-    prompt_title = prompts[0].get("title", "Daily Prompt") if prompts else "Daily Prompt"
-    return f"{headline} | Plus: {prompt_title}"
+    parts = []
+
+    if headlines:
+        headline_title = headlines[0].get("title", "").strip()
+        if headline_title:
+            cleaned = clean_headline(headline_title)
+            parts.append(shorten_text(cleaned, 90))
+
+    if prompts:
+        prompt_title = prompts[0].get("title", "").strip()
+        if prompt_title:
+            parts.append(f"Plus: {prompt_title}")
+
+    if not parts:
+        return "Today’s top AI headlines, 3 useful prompts, and 2 quick skill builders."
+
+    preview = " | ".join(parts)
+
+    if len(preview) > 140:
+        preview = shorten_text(preview, 140)
+
+    return preview
 
 
-def build_plain_text(headlines, prompts, skills, issue_date=None):
+def build_plain_text(headlines, prompts, skills, issue_date=""):
     lines = []
-    lines.append("THE DAILY PROMPT")
+
+    lines.append("The Daily Prompt")
+    lines.append("The daily AI briefing for ambitious professionals who want to win at work and in life.")
     if issue_date:
         lines.append(issue_date)
     lines.append("")
@@ -95,6 +152,10 @@ def main():
     print("Plain text written to output.txt")
     print("Subject written to subject.txt")
     print("Preview written to preview.txt")
+    print("")
+    print(f"Issue date: {issue_date}")
+    print(f"Subject: {subject}")
+    print(f"Preview: {preview}")
     print("")
     print("Selected prompts:")
     for item in prompts:
