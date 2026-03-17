@@ -4,17 +4,35 @@ from app.skills import load_skills
 from app.render import render_issue_html
 
 
+def build_subject():
+    return "The Daily Prompt: AI news, prompts, and skills"
+
+
+def build_preview():
+    return "Today’s top AI headlines, 3 useful prompts, and 2 quick skill builders."
+
+
 def main():
     headlines = fetch_news(limit_per_feed=5)
     prompts = load_prompts()[:3]
     skills = load_skills()[:2]
 
+    subject = build_subject()
+    preview = build_preview()
     html = render_issue_html(headlines, prompts, skills)
 
     with open("output.html", "w", encoding="utf-8") as f:
         f.write(html)
 
+    with open("subject.txt", "w", encoding="utf-8") as f:
+        f.write(subject)
+
+    with open("preview.txt", "w", encoding="utf-8") as f:
+        f.write(preview)
+
     print("Newsletter written to output.html")
+    print("Subject written to subject.txt")
+    print("Preview written to preview.txt")
 
 
 if __name__ == "__main__":
