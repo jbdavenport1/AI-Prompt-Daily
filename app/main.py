@@ -4,12 +4,71 @@ from app.skills import load_skills
 from app.render import render_issue_html
 
 
-def build_subject():
+def clean_headline(text):
+    text = text.strip()
+
+    if " - " in text:
+        text = text.split(" - ")[0].strip()
+
+    replacements = [
+        ("Artificial Intelligence", "AI"),
+        ("artificial intelligence", "AI"),
+    ]
+
+    for old, new in replacements:
+        text = text.replace(old, new)
+
+    return text
+
+
+def shorten_text(text, max_length):
+    text = text.strip()
+
+    if len(text) <= max_length:
+        return text
+
+    shortened = text[:max_length].rstrip()
+
+    if " " in shortened:
+        shortened = shortened.rsplit(" ", 1)[0]
+
+    return shortened + "..."
+
+
+def build_subject(headlines):
+    if headlines:
+        top_title = headlines[0].get("title", "").strip()
+        if top_title:
+            cleaned = clean_headline(top_title)
+            cleaned = shorten_text(cleaned, 90)
+            return f"The Daily Prompt: {cleaned}"
+
     return "The Daily Prompt: AI news, prompts, and skills"
 
 
-def build_preview():
-    return "Today’s top AI headlines, 3 useful prompts, and 2 quick skill builders."
+def build_preview(headlines, prompts):
+    parts = []
+
+    if headlines:
+        headline_title = headlines[0].get("title", "").strip()
+        if headline_title:
+            cleaned = clean_headline(headline_title)
+            parts.append(shorten_text(cleaned, 90))
+
+    if prompts:
+        prompt_title = prompts[0].get("title", "").strip()
+        if prompt_title:
+            parts.append(f"Plus: {prompt_title}")
+
+    if not parts:
+        return "Today’s top AI headlines, 3 useful prompts, and 2 quick skill builders."
+
+    preview = " | ".join(parts)
+
+    if len(preview) > 140:
+        preview = shorten_text(preview, 140)
+
+    return preview
 
 
 def build_plain_text(headlines, prompts, skills):
@@ -55,8 +114,8 @@ def main():
     prompts = load_prompts()[:3]
     skills = load_skills()[:2]
 
-    subject = build_subject()
-    preview = build_preview()
+    subject = build_subject(headlines)
+    preview = build_preview(headlines, prompts)
     html = render_issue_html(headlines, prompts, skills)
     plain_text = build_plain_text(headlines, prompts, skills)
 
