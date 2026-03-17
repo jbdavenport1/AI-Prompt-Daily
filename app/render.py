@@ -1,7 +1,7 @@
 from html import escape
 
 
-def render_issue_html(headlines, prompts, skills):
+def render_issue_html(headlines, prompts, skills, issue_date=""):
     """
     Build a simple HTML newsletter from three content sections:
     - headlines: list of dicts with title, url, summary
@@ -76,6 +76,14 @@ def render_issue_html(headlines, prompts, skills):
     prompts_html = render_prompts(prompts)
     skills_html = render_skills(skills)
 
+    issue_date_html = ""
+    if issue_date:
+        issue_date_html = f'''
+        <p style="margin-top:0;margin-bottom:24px;color:#6b7280;font-size:14px;">
+            {escape(issue_date)}
+        </p>
+        '''
+
     return f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -88,9 +96,10 @@ def render_issue_html(headlines, prompts, skills):
         <div style="max-width:760px;margin:0 auto;padding:32px 20px;">
             <div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:32px;">
                 <h1 style="margin-top:0;margin-bottom:8px;font-size:32px;">The Daily Prompt</h1>
-                <p style="margin-top:0;margin-bottom:24px;color:#4b5563;font-size:16px;">
+                <p style="margin-top:0;margin-bottom:8px;color:#4b5563;font-size:16px;">
                     The daily AI briefing for ambitious professionals who want to win at work and in life.
                 </p>
+                {issue_date_html}
 
                 {section_title("Top AI Headlines")}
                 {headlines_html}
@@ -105,3 +114,4 @@ def render_issue_html(headlines, prompts, skills):
     </body>
     </html>
     """
+	

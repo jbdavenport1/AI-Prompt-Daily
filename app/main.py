@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.news import fetch_news
 from app.prompts import load_prompts
 from app.skills import load_skills
@@ -71,11 +73,13 @@ def build_preview(headlines, prompts):
     return preview
 
 
-def build_plain_text(headlines, prompts, skills):
+def build_plain_text(headlines, prompts, skills, issue_date=""):
     lines = []
 
     lines.append("The Daily Prompt")
     lines.append("The daily AI briefing for ambitious professionals who want to win at work and in life.")
+    if issue_date:
+        lines.append(issue_date)
     lines.append("")
 
     lines.append("TOP AI HEADLINES")
@@ -109,15 +113,20 @@ def build_plain_text(headlines, prompts, skills):
     return "\n".join(lines)
 
 
+def build_issue_date():
+    return datetime.now().strftime("%B %d, %Y")
+
+
 def main():
     headlines = fetch_news(limit_per_feed=5)
     prompts = load_prompts()[:3]
     skills = load_skills()[:2]
 
+    issue_date = build_issue_date()
     subject = build_subject(headlines)
     preview = build_preview(headlines, prompts)
-    html = render_issue_html(headlines, prompts, skills)
-    plain_text = build_plain_text(headlines, prompts, skills)
+    html = render_issue_html(headlines, prompts, skills, issue_date=issue_date)
+    plain_text = build_plain_text(headlines, prompts, skills, issue_date=issue_date)
 
     with open("output.html", "w", encoding="utf-8") as f:
         f.write(html)
