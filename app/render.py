@@ -17,9 +17,6 @@ def render_issue_html(headlines, prompts, skills):
         """
 
     def render_headlines(items):
-        if not items:
-            return "<p>No headlines available today.</p>"
-
         blocks = []
         for item in items:
             title = escape(item.get("title", "Untitled"))
@@ -27,20 +24,16 @@ def render_issue_html(headlines, prompts, skills):
             summary = escape(item.get("summary", ""))
 
             blocks.append(f"""
-            <div style="margin-bottom:20px;padding:16px;border:1px solid #ddd;border-radius:10px;">
+            <div style="margin-bottom:20px;padding:16px;border:1px solid #e5e7eb;border-radius:10px;">
                 <h3 style="margin:0 0 8px 0;font-size:18px;">
-                    <a href="{url}" style="text-decoration:none;color:#111;">{title}</a>
+                    <a href="{url}" style="color:#111827;text-decoration:none;">{title}</a>
                 </h3>
-                <p style="margin:0;color:#444;line-height:1.5;">{summary}</p>
+                <p style="margin:0;color:#374151;line-height:1.5;">{summary}</p>
             </div>
             """)
-
         return "\n".join(blocks)
 
     def render_prompts(items):
-        if not items:
-            return "<p>No prompts available today.</p>"
-
         blocks = []
         for item in items:
             title = escape(item.get("title", "Untitled"))
@@ -50,24 +43,20 @@ def render_issue_html(headlines, prompts, skills):
             why_it_works = escape(item.get("why_it_works", ""))
 
             blocks.append(f"""
-            <div style="margin-bottom:20px;padding:16px;border:1px solid #ddd;border-radius:10px;">
+            <div style="margin-bottom:20px;padding:16px;border:1px solid #e5e7eb;border-radius:10px;">
                 <h3 style="margin:0 0 8px 0;font-size:18px;">{title}</h3>
-                <p style="margin:0 0 8px 0;color:#666;">
+                <p style="margin:0 0 8px 0;color:#6b7280;">
                     <strong>Category:</strong> {category}
                     &nbsp;|&nbsp;
                     <strong>Tool:</strong> {tool}
                 </p>
-                <p style="margin:0 0 8px 0;white-space:pre-wrap;color:#222;"><strong>Prompt:</strong><br>{prompt_text}</p>
-                <p style="margin:0;color:#444;line-height:1.5;"><strong>Why it works:</strong> {why_it_works}</p>
+                <p style="margin:0 0 8px 0;white-space:pre-wrap;color:#111827;"><strong>Prompt:</strong><br>{prompt_text}</p>
+                <p style="margin:0;color:#374151;"><strong>Why it works:</strong> {why_it_works}</p>
             </div>
             """)
-
         return "\n".join(blocks)
 
     def render_skills(items):
-        if not items:
-            return "<p>No skills available today.</p>"
-
         blocks = []
         for item in items:
             title = escape(item.get("title", "Untitled"))
@@ -75,50 +64,44 @@ def render_issue_html(headlines, prompts, skills):
             example_prompt = escape(item.get("example_prompt", ""))
 
             blocks.append(f"""
-            <div style="margin-bottom:20px;padding:16px;border:1px solid #ddd;border-radius:10px;">
+            <div style="margin-bottom:20px;padding:16px;border:1px solid #e5e7eb;border-radius:10px;">
                 <h3 style="margin:0 0 8px 0;font-size:18px;">{title}</h3>
-                <p style="margin:0 0 8px 0;color:#444;line-height:1.5;">{lesson_text}</p>
-                <p style="margin:0;white-space:pre-wrap;color:#222;"><strong>Example prompt:</strong><br>{example_prompt}</p>
+                <p style="margin:0 0 8px 0;color:#374151;line-height:1.5;">{lesson_text}</p>
+                <p style="margin:0;white-space:pre-wrap;color:#111827;"><strong>Example prompt:</strong><br>{example_prompt}</p>
             </div>
             """)
-
         return "\n".join(blocks)
 
-    html = f"""
-    <!doctype html>
-    <html>
+    headlines_html = render_headlines(headlines)
+    prompts_html = render_prompts(prompts)
+    skills_html = render_skills(skills)
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
     <head>
-        <meta charset="utf-8">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>The Daily Prompt</title>
     </head>
-    <body style="margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#111;">
-        <div style="max-width:800px;margin:0 auto;padding:32px 20px;">
-            <div style="background:white;padding:32px;border-radius:14px;border:1px solid #ddd;">
+    <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+        <div style="max-width:760px;margin:0 auto;padding:32px 20px;">
+            <div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:32px;">
                 <h1 style="margin-top:0;margin-bottom:8px;font-size:32px;">The Daily Prompt</h1>
-                <p style="margin-top:0;color:#555;font-size:16px;">
+                <p style="margin-top:0;margin-bottom:24px;color:#4b5563;font-size:16px;">
                     The daily AI briefing for ambitious professionals who want to win at work and in life.
                 </p>
 
                 {section_title("Top AI Headlines")}
-                {render_headlines(headlines)}
+                {headlines_html}
 
-                {section_title("Today’s Prompts")}
-                {render_prompts(prompts)}
+                {section_title("Prompts That Save Time")}
+                {prompts_html}
 
-                {section_title("Skill Builder")}
-                {render_skills(skills)}
+                {section_title("AI Skill Builder")}
+                {skills_html}
             </div>
         </div>
     </body>
     </html>
     """
-
-    return html
-
-
-
-
-
-
-
-
