@@ -10,3 +10,19 @@ def load_prompts(path="data/seed_prompts.csv"):
             prompts.append(row)
 
     return prompts
+
+
+def get_prompt_slice(count=3, offset=0, path="data/seed_prompts.csv"):
+    prompts = load_prompts(path)
+
+    if not prompts:
+        return []
+
+    total = len(prompts)
+    selected = []
+
+    for i in range(count):
+        index = (offset + i) % total
+        selected.append(prompts[index])
+
+    return selected

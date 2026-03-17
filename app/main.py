@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from app.news import fetch_news
-from app.prompts import load_prompts
-from app.skills import load_skills
+from app.prompts import get_prompt_slice
+from app.skills import get_skill_slice
 from app.render import render_issue_html
 
 
@@ -117,10 +117,18 @@ def build_issue_date():
     return datetime.now().strftime("%B %d, %Y")
 
 
+def build_offsets():
+    day_of_year = datetime.now().timetuple().tm_yday
+    prompt_offset = day_of_year * 3
+    skill_offset = day_of_year * 2
+    return prompt_offset, skill_offset
+
+
 def main():
     headlines = fetch_news(limit_per_feed=5)
-    prompts = load_prompts()[:3]
-    skills = load_skills()[:2]
+    prompt_offset, skill_offset = build_offsets()
+    prompts = get_prompt_slice(count=3, offset=prompt_offset)
+    skills = get_skill_slice(count=2, offset=skill_offset)
 
     issue_date = build_issue_date()
     subject = build_subject(headlines)
