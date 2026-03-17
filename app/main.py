@@ -1,27 +1,13 @@
 from app.news import fetch_news
+from app.prompts import load_prompts
+from app.skills import load_skills
 from app.render import render_issue_html
 
 
 def main():
     headlines = fetch_news(limit_per_feed=5)
-
-    prompts = [
-        {
-            "title": "Turn a rough idea into a clear plan",
-            "category": "productivity",
-            "tool": "ChatGPT",
-            "prompt_text": "Turn this rough idea into a step-by-step action plan with the first 3 actions I should take today: [paste idea]",
-            "why_it_works": "It forces structure and gives you an immediate next move."
-        }
-    ]
-
-    skills = [
-        {
-            "title": "Be specific about the outcome",
-            "lesson_text": "Better prompts name the exact output you want, the format, and the audience.",
-            "example_prompt": "Write a 150-word LinkedIn post for financial advisors on why AI matters now."
-        }
-    ]
+    prompts = load_prompts()[:3]
+    skills = load_skills()[:2]
 
     html = render_issue_html(headlines, prompts, skills)
 
