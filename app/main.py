@@ -1,5 +1,7 @@
 from datetime import datetime
 from pathlib import Path
+import json
+import shutil
 
 from app.news import fetch_news
 from app.prompts import get_prompt_slice
@@ -7,71 +9,42 @@ from app.skills import get_skill_slice
 from app.render import render_issue_html
 
 
-def clean_headline(text):
-    text = text.strip()
-
-    if " - " in text:
-        text = text.split(" - ")[0].strip()
-
-    replacements = [
-        ("Artificial Intelligence", "AI"),
-        ("artificial intelligence", "AI"),
-    ]
-
-    for old, new in replacements:
-        text = text.replace(old, new)
-
-    return text
+def build_offsets():
+    day_of_year = datetime.now().timetuple().tm_yday
+    prompt_offset = day_of_year * 3
+    skill_offset = day_of_year * 2
+    return prompt_offset, skill_offset
 
 
-def shorten_text(text, max_length):
-    text = text.strip()
+def build_issue_date():
+    return datetime.now().strftime("%B %d, %Y")
 
-    if len(text) <= max_length:
-        return text
 
-    shortened = text[:max_length].rstrip()
-
-    if " " in shortened:
-        shortened = shortened.rsplit(" ", 1)[0]
-
-    return shortened + "..."
+def build_issue_slug(issue_date: str) -> str:
+    return issue_date.lower().replace(", ", "-").replace(" ", "-")
 
 
 def build_subject(headlines):
-    if headlines:
-        top_title = headlines[0].get("title", "").strip()
-        if top_title:
-            cleaned = clean_headline(top_title)
-            cleaned = shorten_text(cleaned, 90)
-            return f"The Daily Prompt: {cleaned}"
-
-    return "The Daily Prompt: AI news, prompts, and skills"
+    if headlines and len(headlines) > 0:
+        return f"The Daily Prompt | {headlines[0]['title']}"
+    return "The Daily Prompt"
 
 
 def build_preview(headlines, prompts):
     parts = []
 
-    if headlines:
-        headline_title = headlines[0].get("title", "").strip()
-        if headline_title:
-            cleaned = clean_headline(headline_title)
-            parts.append(shorten_text(cleaned, 90))
+    if headlines and len(headlines) > 0:
+        parts.append(headlines[0]["title"])
 
-    if prompts:
-        prompt_title = prompts[0].get("title", "").strip()
-        if prompt_title:
-            parts.append(f"Plus: {prompt_title}")
-
-    if not parts:
-        return "Today’s top AI headlines, 3 useful prompts, and 2 quick skill builders."
+    if prompts and len(prompts) > 0:
+        parts.append(f"Plus: {prompts[0]['title']}")
 
     preview = " | ".join(parts)
 
-    if len(preview) > 140:
-        preview = shorten_text(preview, 140)
+    if not preview:
+        preview = "Daily AI headlines, practical prompts, and skill builders."
 
-    return preview
+    return preview[:180]
 
 
 def build_plain_text(headlines, prompts, skills, issue_date=""):
@@ -79,22 +52,27 @@ def build_plain_text(headlines, prompts, skills, issue_date=""):
 
     lines.append("The Daily Prompt")
     lines.append("The daily AI briefing for ambitious professionals who want to win at work and in life.")
+
     if issue_date:
         lines.append(issue_date)
-    lines.append("")
 
+    lines.append("")
     lines.append("TOP AI HEADLINES")
     lines.append("")
+
     for item in headlines:
         lines.append(f"- {item.get('title', 'Untitled')}")
         lines.append(f"  {item.get('url', '')}")
+
         summary = item.get("summary", "")
         if summary:
             lines.append(f"  {summary}")
+
         lines.append("")
 
     lines.append("TODAY'S PROMPTS")
     lines.append("")
+
     for item in prompts:
         lines.append(f"- {item.get('title', 'Untitled')}")
         lines.append(f"  Category: {item.get('category', 'General')}")
@@ -105,44 +83,41 @@ def build_plain_text(headlines, prompts, skills, issue_date=""):
 
     lines.append("SKILL BUILDER")
     lines.append("")
+
     for item in skills:
         lines.append(f"- {item.get('title', 'Untitled')}")
         lines.append(f"  Lesson: {item.get('lesson_text', '')}")
         lines.append(f"  Example prompt: {item.get('example_prompt', '')}")
         lines.append("")
 
-    return "\n".join(lines)
+    return "\n".join(lines).strip() + "\n"
 
 
-def build_issue_date():
-    return datetime.now().strftime("%B %d, %Y")
+def write_text_file(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8")
 
 
-def build_issue_slug():
-    return datetime.now().strftime("%Y-%m-%d-%H%M%S")
+def write_meta_file(
+    path: Path,
+    issue_date: str,
+    issue_slug: str,
+    subject: str,
+    preview: str,
+    headlines: list,
+    prompts: list,
+    skills: list,
+) -> None:
+    meta = {
+        "issue_date": issue_date,
+        "issue_slug": issue_slug,
+        "subject": subject,
+        "preview": preview,
+        "headline_titles": [item["title"] for item in headlines],
+        "prompt_titles": [item["title"] for item in prompts],
+        "skill_titles": [item["title"] for item in skills],
+    }
 
-
-def build_offsets():
-    day_of_year = datetime.now().timetuple().tm_yday
-    prompt_offset = day_of_year * 3
-    skill_offset = day_of_year * 2
-    return prompt_offset, skill_offset
-
-
-def write_issue_files(output_dir, html, plain_text, subject, preview):
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    with open(output_dir / "issue.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-    with open(output_dir / "subject.txt", "w", encoding="utf-8") as f:
-        f.write(subject)
-
-    with open(output_dir / "preview.txt", "w", encoding="utf-8") as f:
-        f.write(preview)
-
-    with open(output_dir / "issue.txt", "w", encoding="utf-8") as f:
-        f.write(plain_text)
+    path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
 def main():
@@ -152,36 +127,80 @@ def main():
     skills = get_skill_slice(count=2, offset=skill_offset)
 
     issue_date = build_issue_date()
-    issue_slug = build_issue_slug()
+    issue_slug = build_issue_slug(issue_date)
     subject = build_subject(headlines)
     preview = build_preview(headlines, prompts)
-    html = render_issue_html(headlines, prompts, skills, issue_date=issue_date)
-    plain_text = build_plain_text(headlines, prompts, skills, issue_date=issue_date)
 
-    output_dir = Path("output") / issue_slug
-    latest_dir = Path("output") / "latest"
+    html = render_issue_html(
+        headlines,
+        prompts,
+        skills,
+        issue_date=issue_date,
+    )
 
-    write_issue_files(output_dir, html, plain_text, subject, preview)
-    write_issue_files(latest_dir, html, plain_text, subject, preview)
+    plain_text = build_plain_text(
+        headlines,
+        prompts,
+        skills,
+        issue_date=issue_date,
+    )
 
-    print(f"Output folder: {output_dir}")
-    print(f"Latest folder: {latest_dir}")
-    print("Newsletter written to issue.html")
-    print("Plain text written to issue.txt")
-    print("Subject written to subject.txt")
-    print("Preview written to preview.txt")
-    print("")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    output_root = Path("output")
+    run_dir = output_root / timestamp
+    latest_dir = output_root / "latest"
+
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    write_text_file(run_dir / "issue.html", html)
+    write_text_file(run_dir / "issue.txt", plain_text)
+    write_text_file(run_dir / "subject.txt", subject)
+    write_text_file(run_dir / "preview.txt", preview)
+    write_meta_file(
+        run_dir / "meta.json",
+        issue_date,
+        issue_slug,
+        subject,
+        preview,
+        headlines,
+        prompts,
+        skills,
+    )
+
+    if latest_dir.exists():
+        shutil.rmtree(latest_dir)
+
+    latest_dir.mkdir(parents=True, exist_ok=True)
+
+    write_text_file(latest_dir / "issue.html", html)
+    write_text_file(latest_dir / "issue.txt", plain_text)
+    write_text_file(latest_dir / "subject.txt", subject)
+    write_text_file(latest_dir / "preview.txt", preview)
+    write_meta_file(
+        latest_dir / "meta.json",
+        issue_date,
+        issue_slug,
+        subject,
+        preview,
+        headlines,
+        prompts,
+        skills,
+    )
+
     print(f"Issue date: {issue_date}")
     print(f"Subject: {subject}")
     print(f"Preview: {preview}")
-    print("")
-    print("Selected prompts:")
-    for item in prompts:
-        print(f"- {item.get('title', 'Untitled')}")
-    print("")
-    print("Selected skills:")
-    for item in skills:
-        print(f"- {item.get('title', 'Untitled')}")
+
+    print("\nSelected prompts:")
+    for prompt in prompts:
+        print(f"- {prompt['title']}")
+
+    print("\nSelected skills:")
+    for skill in skills:
+        print(f"- {skill['title']}")
+
+    print(f"\nSaved run to: {run_dir}")
+    print(f"Updated latest at: {latest_dir}")
 
 
 if __name__ == "__main__":
