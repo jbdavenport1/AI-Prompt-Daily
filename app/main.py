@@ -119,7 +119,7 @@ def build_issue_date():
 
 
 def build_issue_slug():
-    return datetime.now().strftime("%Y-%m-%d")
+    return datetime.now().strftime("%Y-%m-%d-%H%M%S")
 
 
 def build_offsets():
