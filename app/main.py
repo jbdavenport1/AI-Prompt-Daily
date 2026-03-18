@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 from app.news import fetch_news
 from app.prompts import get_prompt_slice
@@ -117,6 +118,10 @@ def build_issue_date():
     return datetime.now().strftime("%B %d, %Y")
 
 
+def build_issue_slug():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
 def build_offsets():
     day_of_year = datetime.now().timetuple().tm_yday
     prompt_offset = day_of_year * 3
@@ -131,25 +136,30 @@ def main():
     skills = get_skill_slice(count=2, offset=skill_offset)
 
     issue_date = build_issue_date()
+    issue_slug = build_issue_slug()
     subject = build_subject(headlines)
     preview = build_preview(headlines, prompts)
     html = render_issue_html(headlines, prompts, skills, issue_date=issue_date)
     plain_text = build_plain_text(headlines, prompts, skills, issue_date=issue_date)
 
-    with open("output.html", "w", encoding="utf-8") as f:
+    output_dir = Path("output") / issue_slug
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(output_dir / "issue.html", "w", encoding="utf-8") as f:
         f.write(html)
 
-    with open("subject.txt", "w", encoding="utf-8") as f:
+    with open(output_dir / "subject.txt", "w", encoding="utf-8") as f:
         f.write(subject)
 
-    with open("preview.txt", "w", encoding="utf-8") as f:
+    with open(output_dir / "preview.txt", "w", encoding="utf-8") as f:
         f.write(preview)
 
-    with open("output.txt", "w", encoding="utf-8") as f:
+    with open(output_dir / "issue.txt", "w", encoding="utf-8") as f:
         f.write(plain_text)
 
-    print("Newsletter written to output.html")
-    print("Plain text written to output.txt")
+    print(f"Output folder: {output_dir}")
+    print("Newsletter written to issue.html")
+    print("Plain text written to issue.txt")
     print("Subject written to subject.txt")
     print("Preview written to preview.txt")
     print("")
