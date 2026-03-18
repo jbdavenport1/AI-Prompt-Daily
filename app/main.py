@@ -129,20 +129,7 @@ def build_offsets():
     return prompt_offset, skill_offset
 
 
-def main():
-    headlines = fetch_news(limit_per_feed=5)
-    prompt_offset, skill_offset = build_offsets()
-    prompts = get_prompt_slice(count=3, offset=prompt_offset)
-    skills = get_skill_slice(count=2, offset=skill_offset)
-
-    issue_date = build_issue_date()
-    issue_slug = build_issue_slug()
-    subject = build_subject(headlines)
-    preview = build_preview(headlines, prompts)
-    html = render_issue_html(headlines, prompts, skills, issue_date=issue_date)
-    plain_text = build_plain_text(headlines, prompts, skills, issue_date=issue_date)
-
-    output_dir = Path("output") / issue_slug
+def write_issue_files(output_dir, html, plain_text, subject, preview):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with open(output_dir / "issue.html", "w", encoding="utf-8") as f:
@@ -157,7 +144,28 @@ def main():
     with open(output_dir / "issue.txt", "w", encoding="utf-8") as f:
         f.write(plain_text)
 
+
+def main():
+    headlines = fetch_news(limit_per_feed=5)
+    prompt_offset, skill_offset = build_offsets()
+    prompts = get_prompt_slice(count=3, offset=prompt_offset)
+    skills = get_skill_slice(count=2, offset=skill_offset)
+
+    issue_date = build_issue_date()
+    issue_slug = build_issue_slug()
+    subject = build_subject(headlines)
+    preview = build_preview(headlines, prompts)
+    html = render_issue_html(headlines, prompts, skills, issue_date=issue_date)
+    plain_text = build_plain_text(headlines, prompts, skills, issue_date=issue_date)
+
+    output_dir = Path("output") / issue_slug
+    latest_dir = Path("output") / "latest"
+
+    write_issue_files(output_dir, html, plain_text, subject, preview)
+    write_issue_files(latest_dir, html, plain_text, subject, preview)
+
     print(f"Output folder: {output_dir}")
+    print(f"Latest folder: {latest_dir}")
     print("Newsletter written to issue.html")
     print("Plain text written to issue.txt")
     print("Subject written to subject.txt")
